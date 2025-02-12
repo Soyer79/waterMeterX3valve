@@ -371,13 +371,15 @@ void valveControl(){
   }
 }
 void isOnValve(){
-  if((valveOpen->isOn()) && (!on_milli_start)) { 
-    valveOn_millis = millis();
-    on_milli_start = true;
-  }
-  if((valveOpen->isOn()) && ((millis() - valveOn_millis) > 60000)){
-    valveOpen->turnOff();
-    on_milli_start = false;
+  if(valveOpen->isOn()) { 
+    if(!on_milli_start){
+     valveOn_millis = millis();
+     on_milli_start = true;
+    }
+    else if((on_milli_start) && ((millis() - valveOn_millis) > 60000)){
+     valveOpen->turnOff();
+     on_milli_start = false;
+    }
   }
 }
 void turnOffValve(){
