@@ -121,10 +121,14 @@ String top2 = "xxx";
 String top3 = "xxx";
 String tim;
 
+boolean first_run1=true;
+boolean first_run2=true;
+boolean first_run3=true;
 boolean night_1 = 0;
 boolean night_2 = 0;
 boolean night_3 = 0;
 boolean on_milli_start = 0;
+boolean off_milli_start = 0;
 unsigned long valveOn_millis;
 unsigned long valveOff_millis;
 unsigned long sek_millis;
@@ -180,7 +184,10 @@ void setup() {
   
   valveOpen = new Supla::Control::Relay(8, false);
   valveClose = new Supla::Control::Relay(9, false);
-  
+  pinMode(8, OUTPUT);
+  pinMode(9, OUTPUT);
+  valveOpen->turnOff();
+  valveClose->turnOff();
   prev_min_millis_1 = millis();
   prev_hour_millis_1 = millis();
   prev_min_millis_2 = millis();
@@ -259,7 +266,7 @@ void setup() {
 void loop() {
  SuplaDevice.iterate();
   if(dv_id_1 != 1){
-    valveControl();
+   valveControl();
     nightReady();
     if (!client.connected()) {
       long now = millis();
@@ -332,18 +339,33 @@ void callback(char* topic, byte* payload, unsigned int length) {
   if (strcmp(topic, top1.c_str()) == 0) {
     payload[length] = '\0';
     counter_1 = atof((char*)payload);
+    if(first_run1){
+      tempCounter_1 = counter_1;
+      tempCounterNight_1 = counter_1;
+      first_run1=false;
+    }
     USBSerial.print("COUNTER1:......................");
     USBSerial.println(counter_1);
   }
   if (strcmp(topic, top2.c_str()) == 0) {
     payload[length] = '\0';
     counter_2 = atof((char*)payload);
+    if(first_run2){
+      tempCounter_2 = counter_2;
+      tempCounterNight_2 = counter_2;
+      first_run2=false;
+    }
     USBSerial.print("COUNTER2:......................");
     USBSerial.println(counter_2);
   }
   if (strcmp(topic, top3.c_str()) == 0) {
     payload[length] = '\0';
     counter_3 = atof((char*)payload);
+    if(first_run3){
+      tempCounter_3 = counter_3;
+      tempCounterNight_3 = counter_3;
+      first_run3=false;
+    }
     USBSerial.print("COUNTER3:......................");
     USBSerial.println(counter_3);
   }
@@ -366,32 +388,44 @@ void paramSave(){
 void valveControl(){
   if((millis() - sek_millis) >1000){
     isOnValve();
-    turnOffValve();
     sek_millis = millis();
   }
 }
 void isOnValve(){
   if(valveOpen->isOn()) { 
     if(!on_milli_start){
+     USBSerial.print("valveOpen:  ");
+     USBSerial.println(valveOpen->isOn());
      valveOn_millis = millis();
      on_milli_start = true;
     }
     else if((on_milli_start) && ((millis() - valveOn_millis) > 60000)){
      valveOpen->turnOff();
+     USBSerial.print("valveOpen:  ");
+     USBSerial.println(valveOpen->isOn());
      on_milli_start = false;
     }
   }
-}
-void turnOffValve(){
-  if((valveClose->isOn()) && ((millis() - valveOff_millis)> 60000)){ 
-    valveClose->turnOff();
+  if(valveClose->isOn()) { 
+    if(!off_milli_start){
+     USBSerial.print("valveClose:  ");
+     USBSerial.println(valveClose->isOn());
+     valveOff_millis = millis();
+     off_milli_start = true;
+    }
+    else if((off_milli_start) && ((millis() - valveOff_millis) > 60000)){
+     valveClose->turnOff();
+     USBSerial.print("valveClose:  ");
+     USBSerial.println(valveClose->isOn());
+     off_milli_start = false;
+    }
   }
 }
+
 void waterControl1() {
   if (millis() - prev_min_millis_1 > time_period_1) {
     if (counter_1 > (tempCounter_1 + level_alarm_1)) {
       valveClose->turnOn();
-      valveOff_millis = millis();
       Supla::Notification::Send(-1, dev_name_message_1, message_1);
     }
     tempCounter_1 = counter_1;
@@ -400,7 +434,6 @@ void waterControl1() {
   if ((prev_hour_millis_1 - millis() > time_period_night_1) && night_1) {
     if (counter_1 > (tempCounterNight_1 + level_alarm_night_1)) {
       valveClose->turnOn();
-      valveOff_millis = millis();
       String n = "NIGHT1: ";
       String n_message = n + message_1;
       Supla::Notification::Send(-1, dev_name_message_1, n_message.c_str());
@@ -447,8 +480,6 @@ void waterControl3() {
 }
 static bool isNight(int32_t tim, int32_t night_start, int32_t night_end){
     if(night_start < night_end){
-      USBSerial.print("hour.............: ");
-     USBSerial.println(tim);
       return tim >= night_start && tim < night_end;
     }
     else{
@@ -474,12 +505,6 @@ void nightReady(){
      night_1 = nn_1;
      night_2 = nn_2;
      night_3 = nn_3;
-     USBSerial.print("NIGHT1:.............: ");
-     USBSerial.println(night_1);
-     USBSerial.print("NIGHT2:.............: ");
-     USBSerial.println(night_2);
-     USBSerial.print("NIGHT3:.............: ");
-     USBSerial.println(night_3);
      prev_minute_millis=millis(); 
   }
 }
