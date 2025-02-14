@@ -392,21 +392,6 @@ void valveControl(){
   }
 }
 void isOnValve(){
-  if(valveOpen->isOn()) { 
-    valveClose->turnOff();
-    if(!on_milli_start){
-     USBSerial.print("valveOpen:  ");
-     USBSerial.println(valveOpen->isOn());
-     valveOn_millis = millis();
-     on_milli_start = true;
-    }
-    else if((on_milli_start) && ((millis() - valveOn_millis) > 60000)){
-     valveOpen->turnOff();
-     USBSerial.print("valveOpen:  ");
-     USBSerial.println(valveOpen->isOn());
-     on_milli_start = false;
-    }
-  }
   if(valveClose->isOn()) { 
     valveOpen->turnOff();
     if(!off_milli_start){
@@ -420,6 +405,21 @@ void isOnValve(){
      USBSerial.print("valveClose:  ");
      USBSerial.println(valveClose->isOn());
      off_milli_start = false;
+    }
+  }
+  if(valveOpen->isOn()) { 
+    valveClose->turnOff();
+    if(!on_milli_start){
+     USBSerial.print("valveOpen:  ");
+     USBSerial.println(valveOpen->isOn());
+     valveOn_millis = millis();
+     on_milli_start = true;
+    }
+    else if((on_milli_start) && ((millis() - valveOn_millis) > 60000)){
+     valveOpen->turnOff();
+     USBSerial.print("valveOpen:  ");
+     USBSerial.println(valveOpen->isOn());
+     on_milli_start = false;
     }
   }
 }
