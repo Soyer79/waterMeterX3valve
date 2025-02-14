@@ -386,13 +386,14 @@ void paramSave(){
  }
 }
 void valveControl(){
-  if((millis() - sek_millis) >1000){
+  if((millis() - sek_millis) >100){
     isOnValve();
     sek_millis = millis();
   }
 }
 void isOnValve(){
   if(valveOpen->isOn()) { 
+    valveClose->turnOff();
     if(!on_milli_start){
      USBSerial.print("valveOpen:  ");
      USBSerial.println(valveOpen->isOn());
@@ -407,6 +408,7 @@ void isOnValve(){
     }
   }
   if(valveClose->isOn()) { 
+    valveOpen->turnOff();
     if(!off_milli_start){
      USBSerial.print("valveClose:  ");
      USBSerial.println(valveClose->isOn());
@@ -425,6 +427,7 @@ void isOnValve(){
 void waterControl1() {
   if (millis() - prev_min_millis_1 > time_period_1) {
     if (counter_1 > (tempCounter_1 + level_alarm_1)) {
+      valveOpen->turnOff();
       valveClose->turnOn();
       Supla::Notification::Send(-1, dev_name_message_1, message_1);
     }
@@ -433,6 +436,7 @@ void waterControl1() {
   }
   if ((prev_hour_millis_1 - millis() > time_period_night_1) && night_1) {
     if (counter_1 > (tempCounterNight_1 + level_alarm_night_1)) {
+      valveOpen->turnOff();
       valveClose->turnOn();
       String n = "NIGHT1: ";
       String n_message = n + message_1;
